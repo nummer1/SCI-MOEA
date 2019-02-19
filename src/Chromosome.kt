@@ -63,7 +63,6 @@ class Chromosome(val problem: Problem) {
                 return inSegmentsList[index]
             }
             currentSegment.add(index)
-
             // p_index is not in segments
             val pIndex = getIndexDirection(index, genes[index])
             if (pIndex == index || pIndex in currentSegment) {
@@ -84,7 +83,6 @@ class Chromosome(val problem: Problem) {
         for (i in genes.indices) {
             addToSegment(inSegmentsList, segments, mutableListOf(), i)
         }
-
         return segments
     }
 
