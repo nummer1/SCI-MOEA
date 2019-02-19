@@ -1,7 +1,5 @@
-import java.awt.image.BufferedImage
-import java.io.File
 import kotlin.random.Random
-import javax.imageio.ImageIO
+import kotlin.math.sqrt
 
 
 class Chromosome(val problem: Problem) {
@@ -18,7 +16,7 @@ class Chromosome(val problem: Problem) {
     }
 
     fun initializeMST() {
-        // TODO
+        // TODO: use Prim's algorithm
     }
 
     fun initializeRandom() {
@@ -27,7 +25,7 @@ class Chromosome(val problem: Problem) {
         }
     }
 
-    fun getIndex(original: Int, direction: Int): Int {
+    fun getIndexDirection(original: Int, direction: Int): Int {
         // return index of pixel based on a pixel and a direction to go
         var returnValue = original
         when (direction) {
@@ -38,6 +36,19 @@ class Chromosome(val problem: Problem) {
             4 -> returnValue = original - 1
         }
         return if (returnValue >= 0 && returnValue < height * width) returnValue else original
+    }
+
+    fun getNeighbours(pixel: Int): MutableList<Int> {
+        val neighbours = mutableListOf(pixel+1, pixel-1, pixel-width, pixel+width, pixel-width+1, pixel+width+1, pixel-width-1, pixel+width-1)
+        var i = 0
+        while (i < neighbours.size) {
+            if (neighbours[i] < 0 || neighbours[i] >= height * width) {
+                neighbours.removeAt(i)
+                i--
+            }
+            i++
+        }
+        return neighbours
     }
 
     fun getSegments(): List<List<Int>> {
@@ -54,7 +65,7 @@ class Chromosome(val problem: Problem) {
             currentSegment.add(index)
 
             // p_index is not in segments
-            val pIndex = getIndex(index, genes[index])
+            val pIndex = getIndexDirection(index, genes[index])
             if (pIndex == index || pIndex in currentSegment) {
                 segments.add(mutableListOf())
                 segments.last().add(index)
@@ -78,33 +89,57 @@ class Chromosome(val problem: Problem) {
     }
 
     fun getSegmentEdges(): List<List<Int>> {
-        // TODO (check if all neighbours of pixel is in same segment, if not, add to edge list)
         // returns list of list of indexes, where each sublist is indexes on segment edges
-        return mutableListOf()
-    }
-
-    fun overallDeviation() {
-        // TODO
+        // check if all neighbours of pixel is in same segment, if not, add to edge list
         val segments = getSegments()
-    }
-}
-
-
-class Problem(fileName: String) {
-
-    val image: BufferedImage
-    // val colourList: List<Triple<Int, Int, Int>>
-
-    init {
-        if (fileName.equals("TEST")) {
-            image = BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB)
-        } else {
-            image = ImageIO.read(File(fileName))
+        val segmentEdges = List<MutableList<Int>>(segments.size) { mutableListOf() }
+        for (sIndex in segments.indices) {
+            for (pixel in segments[sIndex]) {
+                val neighbors = getNeighbours(pixel)
+                for (n in neighbors) {
+                    if (!(n in segments[sIndex])) {
+                        segmentEdges[sIndex].add(pixel)
+                        break
+                    }
+                }
+            }
         }
+        return segmentEdges
     }
 
-    fun getDistance() {
-
+    fun overallDeviation(): Double {
+        var overallDeviation = 0.0
+        val segments = getSegments()
+        for (segment in segments) {
+            val sum = mutableListOf(0, 0, 0)
+            for (pixel in segment) {
+                val colour = problem.colourList[pixel]
+                sum[0] += colour.first
+                sum[1] += colour.second
+                sum[2] += colour.third
+            }
+            val average = MutableList<Double>(3) { sum[it].toDouble()/segment.size.toDouble() }
+            for (pixel in segment) {
+                val colour = problem.colourList[pixel]
+                overallDeviation += sqrt(Math.pow(colour.first - average[0], 2.0) + Math.pow(colour.second - average[1], 2.0) + Math.pow(colour.third - average[2], 2.0))
+            }
+        }
+        return overallDeviation
     }
 
+    fun connectivityMeasure(): Double {
+        var connectivityMeasure = 0.0
+        val segments = getSegments()
+        for (segment in segments) {
+            for (pixel in segment) {
+                val neighbors = getNeighbours(pixel)
+                for (n in neighbors) {
+                    if (!(n in segment)) {
+                        connectivityMeasure += 1.0/8.0
+                    }
+                }
+            }
+        }
+        return connectivityMeasure
+    }
 }

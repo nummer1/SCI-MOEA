@@ -11,6 +11,8 @@ fun main(args: Array<String>) {
     c1.initializeRandom()
     println(c1.genes)
     println(c1.height * c1.width)
-    val segments = c1.getSegments()
-    println(segments)
+    println(c1.getSegments())
+    println(c1.getSegmentEdges())
+    println(c1.overallDeviation())
+    println(c1.connectivityMeasure())
 }
