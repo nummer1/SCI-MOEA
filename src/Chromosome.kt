@@ -32,6 +32,19 @@ class Chromosome(val problem: Problem) {
         connectivityMeasure()
     }
 
+    fun uniformCrossover(parent1: Chromosome, parent2: Chromosome) {
+        // creates chromosome from uniform crossover of parent1 and parent2
+        for (i in 0.until(width*height)) {
+            genes.add(if (Random.nextBoolean()) parent1.genes[i] else parent2.genes[i])
+        }
+        overallDeviation()
+        connectivityMeasure()
+    }
+
+    fun randomBitflipMutation() {
+        genes[Random.nextInt(0, genes.size)] = Random.nextInt(0,5)
+    }
+
     fun getIndexDirection(original: Int, direction: Int): Int {
         // return index of pixel based on a pixel and a direction to go
         var returnValue = original

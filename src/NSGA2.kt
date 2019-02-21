@@ -96,7 +96,7 @@ class NSGA2(private val problem: Problem, private val populationSize: Int, priva
             val parent2 = if (parentPopulation[potParents[2]].dominates(parentPopulation[potParents[3]])) parentPopulation[potParents[2]] else parentPopulation[potParents[3]]
             val child = Chromosome(problem)
             child.uniformCrossover(parent1, parent2)
-            child.randomBitFlipMutation()
+            child.randomBitflipMutation()
             childPopulation.add(child)
 //            if (Random.nextDouble(0.0, 1.0) < crossoverRate) {
 //                // do crossover
