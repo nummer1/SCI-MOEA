@@ -5,14 +5,6 @@
 fun main(args: Array<String>) {
 
     val problem = Problem("353013/Test image.jpg")
-    val c1 = Chromosome(problem)
-    // val testGenes = listOf(2, 3, 4, 0, 1, 4, 1, 1, 2, 2, 3, 1, 1, 4, 2, 0)
-    // c1.genes.addAll(testGenes)
-    c1.initializeRandom()
-    println(c1.genes)
-    println(c1.height * c1.width)
-    println(c1.getSegments())
-    println(c1.getSegmentEdges())
-    println(c1.overallDeviation)
-    println(c1.connectivityMeasure)
+    val nsga2 = NSGA2(problem, 10, 50, 0.2, 4)
+    nsga2.run()
 }

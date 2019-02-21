@@ -41,7 +41,7 @@ class Chromosome(val problem: Problem) {
         connectivityMeasure()
     }
 
-    fun randomBitflipMutation() {
+    fun randomBitFlipMutation() {
         genes[Random.nextInt(0, genes.size)] = Random.nextInt(0,5)
     }
 
@@ -161,7 +161,7 @@ class Chromosome(val problem: Problem) {
 
     fun dominates(other: Chromosome): Boolean {
         // return true if this dominates other, else returns false
-        return (connectivityMeasure >= other.connectivityMeasure && overallDeviation >= other.overallDeviation) &&
-                (connectivityMeasure > other.connectivityMeasure || overallDeviation > other.overallDeviation)
+        return (connectivityMeasure <= other.connectivityMeasure && overallDeviation <= other.overallDeviation) &&
+                (connectivityMeasure < other.connectivityMeasure || overallDeviation < other.overallDeviation)
     }
 }
