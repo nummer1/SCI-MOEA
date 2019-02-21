@@ -13,6 +13,6 @@ fun main(args: Array<String>) {
     println(c1.height * c1.width)
     println(c1.getSegments())
     println(c1.getSegmentEdges())
-    println(c1.overallDeviation())
-    println(c1.connectivityMeasure())
+    println(c1.overallDeviation)
+    println(c1.connectivityMeasure)
 }

@@ -7,8 +7,11 @@ class Chromosome(val problem: Problem) {
     // genes is list of integers in range 0 to and including 4
     // 0: None, 1: Up, 2: Right, 3: Down, 4: Left
     val genes = mutableListOf<Int>()
-    val width: Int
-    val height: Int
+    private val width: Int
+    private val height: Int
+    var overallDeviation = 0.0
+    var connectivityMeasure = 0.0
+    public var crowdingDistance = 0.0
 
     init {
         width = problem.image.width
@@ -17,12 +20,16 @@ class Chromosome(val problem: Problem) {
 
     fun initializeMST() {
         // TODO: use Prim's algorithm
+        overallDeviation()
+        connectivityMeasure()
     }
 
     fun initializeRandom() {
         for (i in 0.until(height * width)) {
             genes.add(Random.nextInt(5))
         }
+        overallDeviation()
+        connectivityMeasure()
     }
 
     fun getIndexDirection(original: Int, direction: Int): Int {
@@ -105,8 +112,8 @@ class Chromosome(val problem: Problem) {
         return segmentEdges
     }
 
-    fun overallDeviation(): Double {
-        var overallDeviation = 0.0
+    private fun overallDeviation() {
+        overallDeviation = 0.0
         val segments = getSegments()
         for (segment in segments) {
             val sum = mutableListOf(0, 0, 0)
@@ -122,11 +129,10 @@ class Chromosome(val problem: Problem) {
                 overallDeviation += sqrt(Math.pow(colour.first - average[0], 2.0) + Math.pow(colour.second - average[1], 2.0) + Math.pow(colour.third - average[2], 2.0))
             }
         }
-        return overallDeviation
     }
 
-    fun connectivityMeasure(): Double {
-        var connectivityMeasure = 0.0
+    private fun connectivityMeasure() {
+        connectivityMeasure = 0.0
         val segments = getSegments()
         for (segment in segments) {
             for (pixel in segment) {
@@ -138,6 +144,11 @@ class Chromosome(val problem: Problem) {
                 }
             }
         }
-        return connectivityMeasure
+    }
+
+    fun dominates(other: Chromosome): Boolean {
+        // return true if this dominates other, else returns false
+        return (connectivityMeasure >= other.connectivityMeasure && overallDeviation >= other.overallDeviation) &&
+                (connectivityMeasure > other.connectivityMeasure || overallDeviation > other.overallDeviation)
     }
 }
