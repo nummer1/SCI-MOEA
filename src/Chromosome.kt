@@ -45,7 +45,7 @@ class Chromosome(val problem: Problem) {
         genes[Random.nextInt(0, genes.size)] = Random.nextInt(0,5)
     }
 
-    fun getIndexDirection(original: Int, direction: Int): Int {
+    private fun getIndexDirection(original: Int, direction: Int): Int {
         // return index of pixel based on a pixel and a direction to go
         var returnValue = original
         when (direction) {
@@ -58,7 +58,7 @@ class Chromosome(val problem: Problem) {
         return if (returnValue >= 0 && returnValue < height * width) returnValue else original
     }
 
-    fun getNeighbours(pixel: Int): MutableList<Int> {
+    private fun getNeighbours(pixel: Int): MutableList<Int> {
         val neighbours = mutableListOf(pixel+1, pixel-1, pixel-width, pixel+width, pixel-width+1, pixel+width+1, pixel-width-1, pixel+width-1)
         var i = 0
         while (i < neighbours.size) {
