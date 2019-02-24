@@ -1,14 +1,24 @@
+import java.util.concurrent.Executors
 import kotlin.random.Random
 
 
-class NSGA2(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double, private val elitistCount: Int) {
+class NSGA2(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double) {
 
-    private var parentPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem) }
-    private var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem) }
+    var parentPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem) }
+    var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem) }
 
     private fun initializePopulation() {
-        parentPopulation.forEach { it.initializeRandom() }
-        childPopulation.forEach { it.initializeRandom() }
+        val executor = Executors.newFixedThreadPool(8)
+        for (i in 0.until(populationSize)) {
+            val worker = Runnable { parentPopulation[i].initializeMST() }
+            executor.execute(worker)
+        }
+        for (j in 0.until(populationSize)) {
+            val worker = Runnable { childPopulation[j].initializeMST() }
+            executor.execute(worker)
+        }
+        executor.shutdown()
+        while (!executor.isTerminated) { }
     }
 
     private fun fastNondominatedSort(population: MutableList<Chromosome>): MutableList<Chromosome> {
@@ -74,10 +84,6 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         while (true) {
             val nonDominated = fastNondominatedSort(population)
             if (parentPopulation.size + nonDominated.size <= populationSize) {
-                if (parentPopulation.size < elitistCount) {
-                    // sort so adding to child population using elitism takes best solutions
-                    crowdingDistanceAssignment(nonDominated)
-                }
                 parentPopulation.addAll(nonDominated)
                 if (parentPopulation.size == populationSize) {
                     break
@@ -92,34 +98,46 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         }
         // make new child population
         childPopulation.clear()
-        for (i in 0.until(elitistCount)) {
-            childPopulation.add(parentPopulation[i])
-        }
-        for (i in 0.until(populationSize - elitistCount)) {
-            val allParents = MutableList<Int>(populationSize) { it }
-            val potParents = mutableListOf<Int>()
-            for (j in 0.until(4)) {
-                val randParentIndex = Random.nextInt(0, allParents.size)
-                potParents.add(allParents[randParentIndex])
-                allParents.removeAt(randParentIndex)
+        val executor = Executors.newFixedThreadPool(8)
+        for (i in 0.until(populationSize)) {
+            val worker = Runnable {
+                val allParents = MutableList<Int>(populationSize) { it }
+                val potParents = mutableListOf<Int>()
+                for (j in 0.until(4)) {
+                    val randParentIndex = Random.nextInt(0, allParents.size)
+                    potParents.add(allParents[randParentIndex])
+                    allParents.removeAt(randParentIndex)
+                }
+                val parent1 = if (parentPopulation[potParents[0]].dominates(parentPopulation[potParents[1]])) parentPopulation[potParents[0]] else parentPopulation[potParents[1]]
+                val parent2 = if (parentPopulation[potParents[2]].dominates(parentPopulation[potParents[3]])) parentPopulation[potParents[2]] else parentPopulation[potParents[3]]
+                val child = Chromosome(problem)
+                child.uniformCrossover(parent1, parent2)
+                if (Random.nextDouble(0.0, 1.0) < mutationRate) child.randomBitFlipMutation()
+                childPopulation.add(child)
             }
-            val parent1 = if (parentPopulation[potParents[0]].dominates(parentPopulation[potParents[1]])) parentPopulation[potParents[0]] else parentPopulation[potParents[1]]
-            val parent2 = if (parentPopulation[potParents[2]].dominates(parentPopulation[potParents[3]])) parentPopulation[potParents[2]] else parentPopulation[potParents[3]]
-            val child = Chromosome(problem)
-            child.uniformCrossover(parent1, parent2)
-            if (Random.nextDouble(0.0, 1.0) < mutationRate) child.randomBitFlipMutation()
-            childPopulation.add(child)
+            executor.execute(worker)
         }
+        executor.shutdown()
+        while (!executor.isTerminated) { }
     }
 
     fun run() {
+        println("Started initialization")
         initializePopulation()
+        println("Initialization finished")
         for (i in 0.until(generationCount)) {
             updatePopulation()
             var sum1 = 0.0
             var sum2 = 0.0
-            childPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure }
-            println("${sum1/childPopulation.size}, ${sum2/childPopulation.size}")
+            var sum3 = 0.0
+            childPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.getSegments().size }
+            println("AVERAGE CHILD: ${sum1/childPopulation.size}, ${sum2/childPopulation.size}, ${sum3/childPopulation.size}")
+            println("BEST CHILD: ${childPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${childPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
+            parentPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.getSegments().size }
+            println("AVERAGE PARENT: ${sum1/parentPopulation.size}, ${sum2/parentPopulation.size}, ${sum3/parentPopulation.size}")
+            println("BEST PARENT: ${parentPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${parentPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
+            println()
+            // childPopulation.forEach { println("${it.overallDeviation}, ${it.connectivityMeasure}, ${it.getSegments().size}") }
         }
     }
 }
