@@ -21,7 +21,7 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         while (!executor.isTerminated) { }
     }
 
-    private fun fastNondominatedSort(population: MutableList<Chromosome>): MutableList<Chromosome> {
+    private fun fastNondominatedSort(population: MutableList<Chromosome>, editPopulation: Boolean=true): MutableList<Chromosome> {
         // NOTE: this function edits population
         // finds and returns first nondominated front of population
         // all instances in newPopulation is removed from population
@@ -45,11 +45,17 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
             if (addToNewPop) newPopIndexes.add(j)
         }
         val newPopulation = mutableListOf<Chromosome>()
-        var offset = 0
-        for (index in newPopIndexes){
-            newPopulation.add(population[index-offset])
-            population.removeAt(index-offset)
-            offset++
+        if (editPopulation) {
+            var offset = 0
+            for (index in newPopIndexes) {
+                newPopulation.add(population[index - offset])
+                population.removeAt(index - offset)
+                offset++
+            }
+        } else {
+            for (index in newPopIndexes) {
+                newPopulation.add(population[index])
+            }
         }
         return newPopulation
     }
@@ -119,6 +125,10 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         }
         executor.shutdown()
         while (!executor.isTerminated) { }
+    }
+
+    fun getNondominatedParents(): List<Chromosome> {
+        return fastNondominatedSort(parentPopulation, editPopulation = false)
     }
 
     fun run() {

@@ -55,6 +55,7 @@ class Chromosome(val problem: Problem) {
         for (gene in genes) {
             if (gene == -1) {
                 println("Vertex not initialized in Chromosome.initializeMST")
+                break
             }
         }
 
@@ -75,6 +76,14 @@ class Chromosome(val problem: Problem) {
         for (i in 0.until(width*height)) {
             genes[i] = if (Random.nextBoolean()) parent1.genes[i] else parent2.genes[i]
         }
+
+//        val segments = getSegments()
+//        for (sIndex in segments.indices) {
+//            if (segments[sIndex].size < 100) {
+//                // merge segment
+//            }
+//        }
+
         overallDeviation()
         connectivityMeasure()
     }
