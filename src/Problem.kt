@@ -8,6 +8,7 @@ class Problem(private val fileName: String) {
 
     val image: BufferedImage
     val colourList: MutableList<Triple<Int, Int, Int>> = mutableListOf()
+    val folder = "solutions"
 
     init {
         image = ImageIO.read(File(fileName))
@@ -33,26 +34,26 @@ class Problem(private val fileName: String) {
                 newImage.setRGB(x, y, white)
             }
         }
-        val edges = chrome.getSegmentEdges()
+        val edges = chrome.segmentClass.edges!!
         for (edge in edges) {
             for (pixel in edge) {
                 newImage.setRGB(pixel%image.width, pixel/image.width, black)
             }
         }
-        ImageIO.write(newImage, "png", File(name))
+        ImageIO.write(newImage, "png", File(folder + '/' + name))
     }
 
     fun drawOnImage(chrome: Chromosome, name: String) {
         // draw on original image with green edges
         val green = Integer.parseInt("00FF00", 16)
         val newImage = ImageIO.read(File(fileName))
-        val edges = chrome.getSegmentEdges()
+        val edges = chrome.segmentClass.edges!!
         for (edge in edges) {
             for (pixel in edge) {
                 newImage.setRGB(pixel%image.width, pixel/image.width, green)
             }
         }
-        ImageIO.write(newImage, "png", File(name))
+        ImageIO.write(newImage, "png", File(folder + '/' + name))
     }
 
     fun distance(pixel1: Int, pixel2: Int): Int {

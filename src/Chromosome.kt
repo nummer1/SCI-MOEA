@@ -3,7 +3,7 @@ import kotlin.random.Random
 import kotlin.math.sqrt
 
 
-class Chromosome(val problem: Problem) {
+class Chromosome(val problem: Problem, val direction: Direction) {
 
     // genes is list of integers in range 0 to and including 4
     // 0: None, 1: Up, 2: Right, 3: Down, 4: Left
@@ -13,11 +13,13 @@ class Chromosome(val problem: Problem) {
     var overallDeviation = 0.0
     var connectivityMeasure = 0.0
     public var crowdingDistance = 0.0
+    val segmentClass: SegmentClass
 
     init {
         width = problem.image.width
         height = problem.image.height
         genes = MutableList((height*width)) { -1 }
+        segmentClass = SegmentClass(this, direction)
     }
 
     fun initializeMST() {
@@ -35,7 +37,7 @@ class Chromosome(val problem: Problem) {
             currentVertex = queue.poll()
             if (mst[currentVertex.first]) { continue }
             mst[currentVertex.first] = true
-            for (n in getDirectNeighbours(currentVertex.first)) {
+            for (n in direction.getDirectNeighbours(currentVertex.first)) {
                 val distance = problem.distance(n, currentVertex.first)
                 if (!mst[n] && distance < key[n]) {
                     queue.add(Triple(n, currentVertex.first, distance))
@@ -59,6 +61,7 @@ class Chromosome(val problem: Problem) {
             }
         }
 
+        segmentClass.initialize()
         overallDeviation()
         connectivityMeasure()
     }
@@ -67,23 +70,17 @@ class Chromosome(val problem: Problem) {
         for (i in genes.indices) {
             genes[i] = Random.nextInt(0,5)
         }
+        segmentClass.initialize()
         overallDeviation()
         connectivityMeasure()
     }
 
     fun uniformCrossover(parent1: Chromosome, parent2: Chromosome) {
         // creates chromosome from uniform crossover of parent1 and parent2
-        for (i in 0.until(width*height)) {
+        for (i in 0.until(genes.size)) {
             genes[i] = if (Random.nextBoolean()) parent1.genes[i] else parent2.genes[i]
         }
-
-//        val segments = getSegments()
-//        for (sIndex in segments.indices) {
-//            if (segments[sIndex].size < 100) {
-//                // merge segment
-//            }
-//        }
-
+        segmentClass.initialize()
         overallDeviation()
         connectivityMeasure()
     }
@@ -96,114 +93,9 @@ class Chromosome(val problem: Problem) {
         // TODO
     }
 
-    private fun getIndexDirection(original: Int, direction: Int): Int {
-        // return index of pixel based on a pixel and a direction to go
-        var returnValue = original
-        when (direction) {
-            0 -> returnValue = original
-            1 -> returnValue = original - width
-            2 -> returnValue = original + 1
-            3 -> returnValue = original + width
-            4 -> returnValue = original - 1
-        }
-        return if (returnValue >= 0 && returnValue < height * width) returnValue else original
-    }
-
-    private fun getNeighbours(pixel: Int): MutableList<Int> {
-        val neighbours = mutableListOf(pixel+1, pixel-1, pixel-width, pixel+width, pixel-width+1, pixel+width+1, pixel-width-1, pixel+width-1)
-        var i = 0
-        while (i < neighbours.size) {
-            if (neighbours[i] < 0 || neighbours[i] >= height * width) {
-                neighbours.removeAt(i)
-                i--
-            }
-            i++
-        }
-        return neighbours
-    }
-
-    private fun getDirectNeighbours(pixel: Int): MutableList<Int> {
-        val neighbours = mutableListOf(pixel+1, pixel-1, pixel-width, pixel+width)
-        var i = 0
-        while (i < neighbours.size) {
-            if (neighbours[i] < 0 || neighbours[i] >= height * width) {
-                neighbours.removeAt(i)
-                i--
-            }
-            i++
-        }
-        return neighbours
-    }
-
-    fun getSegments(): List<List<Int>> {
-        // returns list of list of indexes, where each sublist is a segment
-
-        // for all indexes:
-        // if index already in segments: return index of that segment
-        // else: add to parent segment
-
-        fun addToSegment(inSegmentsList: MutableList<Int>, segments: MutableList<MutableList<Int>>, currentSegment: MutableList<Int>, index: Int): Int {
-            if (inSegmentsList[index] != -1) {
-                return inSegmentsList[index]
-            }
-            currentSegment.add(index)
-            // p_index is not in segments
-            val pIndex = getIndexDirection(index, genes[index])
-            if (pIndex == index || pIndex in currentSegment) {
-                segments.add(mutableListOf())
-                segments.last().add(index)
-                inSegmentsList[index] = segments.size - 1
-                return segments.size - 1
-            } else {
-                val sIndex = addToSegment(inSegmentsList, segments, currentSegment, pIndex)
-                segments[sIndex].add(index)
-                inSegmentsList[index] = sIndex
-                return sIndex
-            }
-        }
-
-        val segments = MutableList<MutableList<Int>>(0)  { mutableListOf()}
-        val inSegmentsList = MutableList(height*width) { -1 }
-        for (i in genes.indices) {
-            addToSegment(inSegmentsList, segments, mutableListOf(), i)
-        }
-        return segments
-    }
-
-    fun getSegmentsAsSet(): MutableList<Set<Int>> {
-        // returns segments as a lis of sets
-        val segmentsSet = mutableListOf<Set<Int>>()
-        val segments = getSegments()
-        for (segment in segments) {
-            val set = mutableSetOf<Int>()
-            set.addAll(segment)
-            segmentsSet.add(set)
-        }
-        return segmentsSet
-    }
-
-    fun getSegmentEdges(): List<List<Int>> {
-        // returns list of list of indexes, where each sublist is indexes on segment edges
-        // check if all neighbours of pixel is in same segment, if not, add to edge list
-        val segments = getSegmentsAsSet()
-        val segmentEdges = List<MutableList<Int>>(segments.size) { mutableListOf() }
-        for (sIndex in segments.indices) {
-            for (pixel in segments[sIndex]) {
-                val neighbors = getNeighbours(pixel)
-                for (n in neighbors) {
-                    if (!(n in segments[sIndex])) {
-                        segmentEdges[sIndex].add(pixel)
-                        break
-                    }
-                }
-            }
-        }
-        return segmentEdges
-    }
-
     private fun overallDeviation() {
         overallDeviation = 0.0
-        val segments = getSegments()
+        val segments = segmentClass.partitions!!
         for (segment in segments) {
             val sum = mutableListOf(0, 0, 0)
             for (pixel in segment) {
@@ -222,10 +114,10 @@ class Chromosome(val problem: Problem) {
 
     private fun connectivityMeasure() {
         connectivityMeasure = 0.0
-        val segments = getSegmentsAsSet()
+        val segments = segmentClass.partitionsSet!!
         for (segment in segments) {
             for (pixel in segment) {
-                val neighbors = getNeighbours(pixel)
+                val neighbors = direction.getNeighbours(pixel)
                 for (n in neighbors) {
                     if (!(n in segment)) {
                         connectivityMeasure += 1.0/8.0

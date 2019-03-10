@@ -4,8 +4,9 @@ import kotlin.random.Random
 
 class NSGA2(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double) {
 
-    var parentPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem) }
-    var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem) }
+    private val direction = Direction(problem.image.width, problem.image.height)
+    var parentPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
+    var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
 
     private fun initializePopulation() {
         val executor = Executors.newFixedThreadPool(8)
@@ -116,7 +117,7 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
                 }
                 val parent1 = if (parentPopulation[potParents[0]].dominates(parentPopulation[potParents[1]])) parentPopulation[potParents[0]] else parentPopulation[potParents[1]]
                 val parent2 = if (parentPopulation[potParents[2]].dominates(parentPopulation[potParents[3]])) parentPopulation[potParents[2]] else parentPopulation[potParents[3]]
-                val child = Chromosome(problem)
+                val child = Chromosome(problem, direction)
                 child.uniformCrossover(parent1, parent2)
                 if (Random.nextDouble(0.0, 1.0) < mutationRate) child.randomBitFlipMutation()
                 childPopulation.add(child)
@@ -140,10 +141,10 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
             var sum1 = 0.0
             var sum2 = 0.0
             var sum3 = 0.0
-            childPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.getSegments().size }
+            childPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.segmentClass.partitions!!.size }
             println("AVERAGE CHILD: ${sum1/childPopulation.size}, ${sum2/childPopulation.size}, ${sum3/childPopulation.size}")
             println("BEST CHILD: ${childPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${childPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
-            parentPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.getSegments().size }
+            parentPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.segmentClass.partitions!!.size }
             println("AVERAGE PARENT: ${sum1/parentPopulation.size}, ${sum2/parentPopulation.size}, ${sum3/parentPopulation.size}")
             println("BEST PARENT: ${parentPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${parentPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
             println()
