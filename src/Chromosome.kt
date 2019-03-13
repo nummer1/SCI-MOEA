@@ -114,12 +114,13 @@ class Chromosome(val problem: Problem, val direction: Direction) {
 
     private fun connectivityMeasure() {
         connectivityMeasure = 0.0
-        val segments = segmentClass.partitionsSet!!
-        for (segment in segments) {
-            for (pixel in segment) {
+        val segments = segmentClass.partitions!!
+        val pixelMap = segmentClass.pixelToPartitionMap!!
+        for (sIndex in segments.indices) {
+            for (pixel in segments[sIndex]) {
                 val neighbors = direction.getNeighbours(pixel)
                 for (n in neighbors) {
-                    if (!(n in segment)) {
+                    if (pixelMap[n] != sIndex) {
                         connectivityMeasure += 1.0/8.0
                     }
                 }

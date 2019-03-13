@@ -5,7 +5,7 @@
 fun main(args: Array<String>) {
     // TODO: if number segments is larger or smaller than max and min number of possible segments, set crowdingDistance to 0
     val problem = Problem("353013/Test image.jpg")
-    val nsga2 = NSGA2(problem, 10, 40, 0.2)
+    val nsga2 = NSGA2(problem, 1, 10, 0.2)
     nsga2.run()
 
     // TODO: only write nondominated solution (both parent and child)

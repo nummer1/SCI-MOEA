@@ -141,11 +141,14 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
             var sum1 = 0.0
             var sum2 = 0.0
             var sum3 = 0.0
+            var sum4 = 0.0
+            var sum5 = 0.0
+            var sum6 = 0.0
             childPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.segmentClass.partitions!!.size }
             println("AVERAGE CHILD: ${sum1/childPopulation.size}, ${sum2/childPopulation.size}, ${sum3/childPopulation.size}")
             println("BEST CHILD: ${childPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${childPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
-            parentPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.segmentClass.partitions!!.size }
-            println("AVERAGE PARENT: ${sum1/parentPopulation.size}, ${sum2/parentPopulation.size}, ${sum3/parentPopulation.size}")
+            parentPopulation.forEach { sum4 += it.overallDeviation; sum5 += it.connectivityMeasure; sum6 += it.segmentClass.partitions!!.size }
+            println("AVERAGE PARENT: ${sum4/parentPopulation.size}, ${sum5/parentPopulation.size}, ${sum6/parentPopulation.size}")
             println("BEST PARENT: ${parentPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${parentPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
             println()
             // childPopulation.forEach { println("${it.overallDeviation}, ${it.connectivityMeasure}, ${it.getSegments().size}") }
