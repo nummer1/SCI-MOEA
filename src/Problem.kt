@@ -4,22 +4,36 @@ import javax.imageio.ImageIO
 import kotlin.math.sqrt
 
 
-class Problem(private val fileName: String) {
+class Problem(private val fileName: String, var minSegmentSize: Int) {
 
     val image: BufferedImage
-    val colourList: MutableList<Triple<Int, Int, Int>> = mutableListOf()
+    val pixelSize = 1
+    val sqrtPSize = pixelSize * pixelSize
+    val height: Int
+    val width: Int
+    val colourList: MutableList<Triple<Double, Double, Double>> = mutableListOf()
     val folder = "solutions"
 
     init {
+        minSegmentSize /= sqrtPSize
         image = ImageIO.read(File(fileName))
-        for (y in 0.until(image.height)) {
-            for (x in 0.until(image.width)) {
-                val rgb = image.getRGB(x, y)
-                // val alpha = rgb shr 24 and 0xFF
-                val red = rgb shr 16 and 0xFF
-                val green = rgb shr 8 and 0xFF
-                val blue = rgb and 0xFF
-                colourList.add(Triple(red, green, blue))
+        height = image.height/pixelSize
+        width = image.width/pixelSize
+        for (y in 0.until(height)) {
+            for (x in 0.until(width)) {
+                var red = 0.0
+                var green = 0.0
+                var blue = 0.0
+                // , Pair(x+1, y), Pair(x, y+1), Pair(x+1, y+1)
+                for (cor in mutableListOf<Pair<Int, Int>>(Pair(x, y))) {
+                    val rgb = image.getRGB(cor.first, cor.second)
+                    // val alpha = rgb shr 24 and 0xFF
+                    red += rgb shr 16 and 0xFF
+                    green += rgb shr 8 and 0xFF
+                    blue += rgb and 0xFF
+                }
+
+                colourList.add(Triple(red/sqrtPSize, green/sqrtPSize, blue/sqrtPSize))
             }
         }
     }
@@ -37,7 +51,7 @@ class Problem(private val fileName: String) {
         val edges = chrome.segmentClass.edges!!
         for (edge in edges) {
             for (pixel in edge) {
-                newImage.setRGB(pixel%image.width, pixel/image.width, black)
+                newImage.setRGB((pixel%width)*pixelSize, (pixel/width)*pixelSize, black)
             }
         }
         ImageIO.write(newImage, "png", File(folder + '/' + name))
@@ -50,15 +64,15 @@ class Problem(private val fileName: String) {
         val edges = chrome.segmentClass.edges!!
         for (edge in edges) {
             for (pixel in edge) {
-                newImage.setRGB(pixel%image.width, pixel/image.width, green)
+                newImage.setRGB((pixel%width)*pixelSize, (pixel/width)*pixelSize, green)
             }
         }
         ImageIO.write(newImage, "png", File(folder + '/' + name))
     }
 
     fun distance(pixel1: Int, pixel2: Int): Int {
-        return sqrt(Math.pow((colourList[pixel1].first.toDouble() - colourList[pixel2].first.toDouble()), 2.0) +
-                Math.pow((colourList[pixel1].second.toDouble() - colourList[pixel2].second.toDouble()), 2.0) +
-                Math.pow((colourList[pixel1].third.toDouble() - colourList[pixel2].third.toDouble()), 2.0)).toInt()
+        return sqrt(Math.pow((colourList[pixel1].first - colourList[pixel2].first), 2.0) +
+                Math.pow((colourList[pixel1].second - colourList[pixel2].second), 2.0) +
+                Math.pow((colourList[pixel1].third - colourList[pixel2].third), 2.0)).toInt()
     }
 }

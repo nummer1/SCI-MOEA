@@ -4,7 +4,7 @@ import kotlin.random.Random
 
 class NSGA2(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double) {
 
-    private val direction = Direction(problem.image.width, problem.image.height)
+    private val direction = Direction(problem.width, problem.height)
     var parentPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
     var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
 
@@ -67,17 +67,27 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         population.forEach { it.crowdingDistance = 0.0 }
 
         population.sortBy { it.overallDeviation }
-        population.first().crowdingDistance = Double.MAX_VALUE/2
-        population.last().crowdingDistance = Double.MAX_VALUE/2
+        population.first().crowdingDistance = 3.0
+        population.last().crowdingDistance = 3.0
+        val largestDev = population.last().overallDeviation
         for (i in 1.until(population.size-1)) {
-            population[i].crowdingDistance += population[i+1].overallDeviation - population[i-1].overallDeviation
+            population[i].crowdingDistance += population[i+1].overallDeviation/largestDev - population[i-1].overallDeviation/largestDev
         }
 
         population.sortBy { it.connectivityMeasure }
-        population.first().crowdingDistance = Double.MAX_VALUE/2
-        population.last().crowdingDistance = Double.MAX_VALUE/2
+        population.first().crowdingDistance = 3.0
+        population.last().crowdingDistance = 3.0
+        val largestConn = population.last().connectivityMeasure
         for (i in 1.until(population.size-1)) {
-            population[i].crowdingDistance += population[i+1].connectivityMeasure - population[i-1].connectivityMeasure
+            population[i].crowdingDistance += population[i+1].connectivityMeasure/largestConn - population[i-1].connectivityMeasure/largestConn
+        }
+
+        population.sortBy { it.edgeValue }
+        population.first().crowdingDistance = 3.0
+        population.last().crowdingDistance = 3.0
+        val largestEdge = population.last().edgeValue
+        for (i in 1.until(population.size-1)) {
+            population[i].crowdingDistance += population[i+1].edgeValue/largestEdge - population[i-1].edgeValue/largestEdge
         }
         population.sortByDescending { it.crowdingDistance }
     }
@@ -138,18 +148,13 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         println("Initialization finished")
         for (i in 0.until(generationCount)) {
             updatePopulation()
-            var sum1 = 0.0
-            var sum2 = 0.0
-            var sum3 = 0.0
-            var sum4 = 0.0
-            var sum5 = 0.0
-            var sum6 = 0.0
-            childPopulation.forEach { sum1 += it.overallDeviation; sum2 += it.connectivityMeasure; sum3 += it.segmentClass.partitions!!.size }
-            println("AVERAGE CHILD: ${sum1/childPopulation.size}, ${sum2/childPopulation.size}, ${sum3/childPopulation.size}")
-            println("BEST CHILD: ${childPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${childPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
-            parentPopulation.forEach { sum4 += it.overallDeviation; sum5 += it.connectivityMeasure; sum6 += it.segmentClass.partitions!!.size }
-            println("AVERAGE PARENT: ${sum4/parentPopulation.size}, ${sum5/parentPopulation.size}, ${sum6/parentPopulation.size}")
-            println("BEST PARENT: ${parentPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${parentPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}")
+            val sum = MutableList<Double>(8) { 0.0 }
+            childPopulation.forEach { sum[0] += it.overallDeviation; sum[1] += it.connectivityMeasure; sum[2] += it.edgeValue; sum[3] += it.segmentClass.partitions!!.size.toDouble() }
+            println("AVERAGE CHILD: ${sum[0]/childPopulation.size}, ${sum[1]/childPopulation.size}, ${sum[2]/childPopulation.size}, ${sum[3]/childPopulation.size}")
+            println("BEST CHILD: ${childPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${childPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}, ${childPopulation.maxBy { it.edgeValue }!!.edgeValue}")
+            parentPopulation.forEach { sum[4] += it.overallDeviation; sum[5] += it.connectivityMeasure; sum[6] += it.edgeValue; sum[7] += it.segmentClass.partitions!!.size.toDouble() }
+            println("AVERAGE PARENT: ${sum[4]/parentPopulation.size}, ${sum[5]/parentPopulation.size}, ${sum[6]/parentPopulation.size}, ${sum[7]/parentPopulation.size}")
+            println("BEST PARENT: ${parentPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${parentPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}, ${parentPopulation.maxBy { it.edgeValue }!!.edgeValue}")
             println()
             // childPopulation.forEach { println("${it.overallDeviation}, ${it.connectivityMeasure}, ${it.getSegments().size}") }
         }

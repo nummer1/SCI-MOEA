@@ -8,17 +8,14 @@ class Chromosome(val problem: Problem, val direction: Direction) {
     // genes is list of integers in range 0 to and including 4
     // 0: None, 1: Up, 2: Right, 3: Down, 4: Left
     val genes: MutableList<Int>
-    private val width: Int
-    private val height: Int
     var overallDeviation = 0.0
     var connectivityMeasure = 0.0
-    public var crowdingDistance = 0.0
+    var edgeValue = 0.0
+    var crowdingDistance = 0.0
     val segmentClass: SegmentClass
 
     init {
-        width = problem.image.width
-        height = problem.image.height
-        genes = MutableList((height*width)) { -1 }
+        genes = MutableList((problem.height*problem.width)) { -1 }
         segmentClass = SegmentClass(this, direction)
     }
 
@@ -46,9 +43,9 @@ class Chromosome(val problem: Problem, val direction: Direction) {
             }
             when (currentVertex.first - currentVertex.second) {
                 0 -> genes[currentVertex.first] = 0 // None
-                width -> genes[currentVertex.first] = 1 // Up
+                problem.width -> genes[currentVertex.first] = 1 // Up
                 -1 -> genes[currentVertex.first] = 2 // Right
-                -width -> genes[currentVertex.first] = 3 // Down
+                -problem.width -> genes[currentVertex.first] = 3 // Down
                 1 -> genes[currentVertex.first] = 4 // Left
                 else -> println("Error with parent in Chromosome.initializeMST")
             }
@@ -64,6 +61,7 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         segmentClass.initialize()
         overallDeviation()
         connectivityMeasure()
+        edgeValue()
     }
 
     fun initializeRandom() {
@@ -73,6 +71,7 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         segmentClass.initialize()
         overallDeviation()
         connectivityMeasure()
+        edgeValue()
     }
 
     fun uniformCrossover(parent1: Chromosome, parent2: Chromosome) {
@@ -83,6 +82,7 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         segmentClass.initialize()
         overallDeviation()
         connectivityMeasure()
+        edgeValue()
     }
 
     fun randomBitFlipMutation() {
@@ -97,14 +97,14 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         overallDeviation = 0.0
         val segments = segmentClass.partitions!!
         for (segment in segments) {
-            val sum = mutableListOf(0, 0, 0)
+            val sum = mutableListOf(0.0, 0.0, 0.0)
             for (pixel in segment) {
                 val colour = problem.colourList[pixel]
                 sum[0] += colour.first
                 sum[1] += colour.second
                 sum[2] += colour.third
             }
-            val average = MutableList<Double>(3) { sum[it].toDouble()/segment.size.toDouble() }
+            val average = MutableList<Double>(3) { sum[it]/segment.size.toDouble() }
             for (pixel in segment) {
                 val colour = problem.colourList[pixel]
                 overallDeviation += sqrt(Math.pow(colour.first - average[0], 2.0) + Math.pow(colour.second - average[1], 2.0) + Math.pow(colour.third - average[2], 2.0))
@@ -128,9 +128,26 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         }
     }
 
+    private fun edgeValue() {
+        edgeValue = 0.0
+        val edges = segmentClass.edges!!
+        val map = segmentClass.pixelToPartitionMap!!
+        for (edge in edges) {
+            for (pixel in edge) {
+                for (n in direction.getDirectNeighbours(pixel)) {
+                    if (map[n] != map[pixel]) {
+                        val c1 = problem.colourList[pixel]
+                        val c2 = problem.colourList[n]
+                        edgeValue += sqrt(Math.pow(c1.first - c2.first, 2.0) + Math.pow(c1.second - c2.second, 2.0) + Math.pow(c1.third - c2.third, 2.0))
+                    }
+                }
+            }
+        }
+    }
+
     fun dominates(other: Chromosome): Boolean {
         // return true if this dominates other, else returns false
-        return (connectivityMeasure <= other.connectivityMeasure && overallDeviation <= other.overallDeviation) &&
-                (connectivityMeasure < other.connectivityMeasure || overallDeviation < other.overallDeviation)
+        return (connectivityMeasure <= other.connectivityMeasure && overallDeviation <= other.overallDeviation && edgeValue >= other.edgeValue) &&
+                (connectivityMeasure < other.connectivityMeasure || overallDeviation < other.overallDeviation || edgeValue > other.edgeValue)
     }
 }

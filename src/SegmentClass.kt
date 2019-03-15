@@ -1,3 +1,4 @@
+import java.util.*
 import kotlin.math.sqrt
 
 
@@ -29,67 +30,101 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
 
     private fun mergeSmallSegments() {
         // merges segments under 100 pixels
-        // TODO: create segment neighbour list
-        // merge all segments that are under 100 pixels with closest neighbour (colour wise)
 
-        val mergingIndexes = mutableListOf<Int>()
-        val avgColour = mutableListOf<Triple<Double, Double, Double>>()
-
-        for (pIndex in partitions!!.indices) {
-            if (partitions!![pIndex].size < 100) {
-                mergingIndexes.add(pIndex)
-            }
-        }
-
-        for (segment in partitions!!) {
-            val sum = mutableListOf(0, 0, 0)
-            for (pixel in segment) {
+        fun setColour(segmentNumber: Int, colourList: MutableList<Triple<Double, Double, Double>>, pixelList: MutableList<Int>) {
+            val sum = mutableListOf(0.0, 0.0, 0.0)
+            for (pixel in pixelList) {
                 val colour = chrome.problem.colourList[pixel]
                 sum[0] += colour.first
                 sum[1] += colour.second
                 sum[2] += colour.third
             }
-            avgColour.add(Triple(sum[0].toDouble()/segment.size.toDouble(), sum[1].toDouble()/segment.size.toDouble(), sum[2].toDouble()/segment.size.toDouble()))
+            val lSize = pixelList.size.toDouble()
+            colourList[segmentNumber] = (Triple(sum[0]/lSize, sum[1]/lSize, sum[2]/lSize))
         }
 
-        val remove = mutableListOf<Int>()
-        for (i in mergingIndexes) {
-            var closestNeighbour = -1
-            var closestDistance = Double.MAX_VALUE
+        fun getDistance(colourList: MutableList<Triple<Double, Double, Double>>, i: Int, n: Int): Double {
+            return sqrt(Math.pow(colourList[i].first - colourList[n].first, 2.0) + Math.pow(colourList[i].second - colourList[n].second, 2.0) + Math.pow(colourList[i].third - colourList[n].third, 2.0))
+        }
+
+        // TODO: convert to set?
+        val remainingIndexes = mutableListOf<Int>()
+        val avgColour = mutableListOf<Triple<Double, Double, Double>>()
+
+        for (pIndex in partitions!!.indices) {
+            if (partitions!![pIndex].size > chrome.problem.minSegmentSize) {
+                remainingIndexes.add(pIndex)
+            }
+        }
+
+        for (sIndex in partitions!!.indices) {
+            avgColour.add(Triple(0.0, 0.0, 0.0))
+            setColour(sIndex, avgColour, partitions!![sIndex])
+        }
+
+        val merged = MutableList<Boolean>(partitions!!.size) { it in remainingIndexes }
+        // TODO: make queue-comparator accurate (do no use toInt())
+        val queue = PriorityQueue<Triple<Int,Int,Double>>(Comparator { o1, o2 -> (o1.third - o2.third).toInt() })
+        for (i in remainingIndexes) {
             for (n in partitionsNeighbours!![i]!!) {
-                val distance = sqrt(Math.pow(avgColour[i].first - avgColour[n].first, 2.0) + Math.pow(avgColour[i].second - avgColour[n].second, 2.0) + Math.pow(avgColour[i].third - avgColour[n].third, 2.0))
-                if (distance < closestDistance) {
-                    closestNeighbour = n
-                    closestDistance = distance
+                if (!merged[n]) {
+                    queue.add(Triple(n, i, getDistance(avgColour, i, n)))
                 }
             }
-            if (closestNeighbour == -1) {
-                println("Error in SegmentClass.mergeSmallSegments(): no closest neighbour")
-            }
-            // merge
-            partitionsNeighbours!![closestNeighbour]!!.addAll(partitionsNeighbours!![i]!!)
-            partitionsNeighbours!![i]!!.addAll(partitionsNeighbours!![closestNeighbour]!!)
-            partitionsNeighbours!![closestNeighbour]!!.remove(i)
-            partitionsNeighbours!![i]!!.remove(closestNeighbour)
-            partitions!![closestNeighbour].addAll(partitions!![i])
-            partitions!![i].addAll(partitions!![closestNeighbour])
-            if (closestNeighbour !in remove) {
-                remove.add(i)
-            }
         }
 
-        var sum = 0
-        partitions!!.forEach { sum += it.size }
-        println("sum1: $sum, ${partitions!!.size}")
-
-        for (index in remove) {
-            partitions!![index] = mutableListOf()
+        while (queue.isNotEmpty()) {
+            val next = queue.poll()
+            if (merged[next.first]) { continue }
+            merged[next.first] = true
+            for (n in partitionsNeighbours!![next.first]!!) {
+                if (!merged[n]) {
+                    queue.add(Triple(n, next.second, getDistance(avgColour, next.second, n)))
+                }
+            }
+            partitions!![next.second].addAll(partitions!![next.first])
+            partitions!![next.first] = mutableListOf<Int>()
         }
+
+//        val merged = MutableList<Boolean>(partitions!!.size) { it in remainingIndexes }
+//        var queueList = mutableListOf<Triple<Int, Int, Double>>()
+//
+//        for (i in remainingIndexes) {
+//            for (n in partitionsNeighbours!![i]!!) {
+//                if (!merged[n]) {
+//                    queueList.add(Triple(n, i, getDistance(avgColour, i, n)))
+//                }
+//            }
+//        }
+//
+//        while (queueList.isNotEmpty()) {
+//            queueList.sortBy { it.third }
+//            val next = queueList[0]
+//            if (merged[next.first]) { println("MERGED ADDED TO QUEUE") }
+//            merged[next.first] = true
+//
+//            partitions!![next.second].addAll(partitions!![next.first])
+//            partitions!![next.first] = mutableListOf<Int>()
+//            partitionsNeighbours!![next.first]!!.forEach { partitionsNeighbours!![next.second]!!.add(it) }
+//            remainingIndexes.forEach { partitionsNeighbours!![it]!!.remove(it); partitionsNeighbours!![it]!!.remove(next.first) }
+//            // partitionsNeighbours!![next.second]!!.addAll(partitionsNeighbours!![next.first]!!)
+//            setColour(next.second, avgColour, partitions!![next.second])
+//
+//            queueList = mutableListOf()
+//            for (i in remainingIndexes) {
+//                for (n in partitionsNeighbours!![i]!!) {
+//                    if (!merged[n]) {
+//                        queueList.add(Triple(n, i, getDistance(avgColour, i, n)))
+//                    }
+//                }
+//            }
+//        }
+
         partitions = partitions!!.filter { it.isNotEmpty() }.toMutableList()
 
-        sum = 0
-        partitions!!.forEach { sum += it.size }
-        println("sum2: $sum, ${partitions!!.size}")
+//        var sum = 0
+//        partitions!!.forEach { sum += it.size }
+//        println("sum: $sum, ${partitions!!.size}")
 
     }
 
@@ -147,6 +182,7 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
         val segmentsNeighbours = mutableMapOf<Int, MutableSet<Int>>()
 
         for (sIndex in segments.indices) {
+            segmentsNeighbours[sIndex] = mutableSetOf()
             for (pixel in segments[sIndex]) {
                 val neighbours = direction.getDirectNeighbours(pixel)
                 for (n in neighbours) {
@@ -154,9 +190,10 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
                         segmentsEdges[sIndex].add(pixel)
                         if (segmentsNeighbours.containsKey(sIndex)) {
                             segmentsNeighbours[sIndex]!!.add(pixelToPartitionMap!![n]!!)
-                        } else {
-                            segmentsNeighbours[sIndex] = mutableSetOf(pixelToPartitionMap!![n]!!)
                         }
+//                        } else {
+//                            segmentsNeighbours[sIndex] = mutableSetOf(pixelToPartitionMap!![n]!!)
+//                        }
                     }
                 }
             }

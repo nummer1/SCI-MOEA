@@ -4,19 +4,21 @@
 
 fun main(args: Array<String>) {
     // TODO: if number segments is larger or smaller than max and min number of possible segments, set crowdingDistance to 0
-    val problem = Problem("353013/Test image.jpg")
-    val nsga2 = NSGA2(problem, 1, 10, 0.2)
+    val problem = Problem("353013/Test image.jpg", 400)
+    val nsga2 = NSGA2(problem, 10, 40, 0.2)
     nsga2.run()
 
     // TODO: only write nondominated solution (both parent and child)
     var i = 0
     for (child in nsga2.childPopulation) {
         problem.drawOnBlank(child, "child_${i}segments=${child.segmentClass.partitions!!.size}.png")
+        problem.drawOnImage(child, "child2_${i}segments=${child.segmentClass.partitions!!.size}.png")
         i += 1
     }
     i = 0
     for (parent in nsga2.getNondominatedParents()) {
         problem.drawOnBlank(parent, "parent_${i}segments=${parent.segmentClass.partitions!!.size}.png")
+        problem.drawOnImage(parent, "parent2_${i}segments=${parent.segmentClass.partitions!!.size}.png")
         i += 1
     }
 //    problem.drawOnBlank(nsga2.childPopulation[2], "test1.png")
