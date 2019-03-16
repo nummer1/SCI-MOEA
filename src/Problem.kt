@@ -19,23 +19,32 @@ class Problem(private val fileName: String, var minSegmentSize: Int) {
         image = ImageIO.read(File(fileName))
         height = image.height/pixelSize
         width = image.width/pixelSize
-        for (y in 0.until(height)) {
-            for (x in 0.until(width)) {
-                var red = 0.0
-                var green = 0.0
-                var blue = 0.0
-                // , Pair(x+1, y), Pair(x, y+1), Pair(x+1, y+1)
-                for (cor in mutableListOf<Pair<Int, Int>>(Pair(x, y))) {
-                    val rgb = image.getRGB(cor.first, cor.second)
-                    // val alpha = rgb shr 24 and 0xFF
-                    red += rgb shr 16 and 0xFF
-                    green += rgb shr 8 and 0xFF
-                    blue += rgb and 0xFF
-                }
+        for (pixel in 0.until(height*width)) {
+            var red = 0.0
+            var green = 0.0
+            var blue = 0.0
+            for (cor in getRealPixelList(pixel)) {
+                val rgb = image.getRGB(cor.first, cor.second)
+                // val alpha = rgb shr 24 and 0xFF
+                red += rgb shr 16 and 0xFF
+                green += rgb shr 8 and 0xFF
+                blue += rgb and 0xFF
+            }
 
-                colourList.add(Triple(red/sqrtPSize, green/sqrtPSize, blue/sqrtPSize))
+            colourList.add(Triple(red/sqrtPSize, green/sqrtPSize, blue/sqrtPSize))
+        }
+    }
+
+    // TODO: only works when pixelSize is 1: gives coordinates out of bounds
+    private fun getRealPixelList(pixel: Int): MutableList<Pair<Int, Int>> {
+        val real = mutableListOf<Pair<Int, Int>>()
+        for (i in 0.until(pixelSize)) {
+            for (j in 0.until(pixelSize)) {
+                real.add(Pair((pixel%width) + i, (pixel/width) + (j * width)))
             }
         }
+        println(real.size)
+        return real
     }
 
     fun drawOnBlank(chrome: Chromosome, name: String) {
@@ -70,9 +79,9 @@ class Problem(private val fileName: String, var minSegmentSize: Int) {
         ImageIO.write(newImage, "png", File(folder + '/' + name))
     }
 
-    fun distance(pixel1: Int, pixel2: Int): Int {
+    fun distance(pixel1: Int, pixel2: Int): Double {
         return sqrt(Math.pow((colourList[pixel1].first - colourList[pixel2].first), 2.0) +
                 Math.pow((colourList[pixel1].second - colourList[pixel2].second), 2.0) +
-                Math.pow((colourList[pixel1].third - colourList[pixel2].third), 2.0)).toInt()
+                Math.pow((colourList[pixel1].third - colourList[pixel2].third), 2.0))
     }
 }

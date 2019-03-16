@@ -1,6 +1,7 @@
 import java.util.*
-import kotlin.random.Random
+import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 
 class Chromosome(val problem: Problem, val direction: Direction) {
@@ -19,20 +20,113 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         segmentClass = SegmentClass(this, direction)
     }
 
-    fun initializeMST() {
+    fun initializeMSTKruskal() {
+        val edges = mutableListOf<Triple<Int, Int, Double>>()
+        for (i in genes.indices) {
+            for (n in direction.getDirectNeighbours(i)) {
+                edges.add(Triple(i, n, problem.distance(i, n)))
+            }
+        }
+        edges.sortBy { it.third }
+
+        val disjointMap = mutableMapOf<Int, Element>()
+
+        val mst = mutableListOf<Triple<Int, Int, Double>>()
+
+        for (v in 0.until(genes.size)) {
+            val e = Element()
+            e.makeSet(v)
+            disjointMap[v] = e
+        }
+
+        for (edge in edges) {
+            val from = disjointMap[edge.first]!!.findSet().value
+            val to = disjointMap[edge.second]!!.findSet().value
+            if (from != to) {
+                mst.add(edge)
+                disjointMap[edge.first]!!.union(disjointMap[edge.second]!!)
+            }
+        }
+
+        println("sizes: ${edges.size}, ${mst.size}")
+        mst.shuffle()
+
+        val disMap2 = mutableMapOf<Int, Element>()
+        for (v in 0.until(genes.size)) {
+            val e = Element()
+            e.makeSet(v)
+            disMap2[v] = e
+        }
+
+        for (edge in mst.subList(100, mst.size)) {
+            disMap2[edge.first]!!.union(disMap2[edge.second]!!)
+        }
+
+        val segMap = mutableMapOf<Int, MutableList<Int>>()
+        for (v in genes.indices) {
+            val rep = disMap2[v]!!.findSet().value
+            if (segMap.contains(rep)) {
+                segMap[rep]!!.add(v)
+            } else {
+                segMap[rep] = mutableListOf(v)
+            }
+        }
+
+        for (seg in segMap.values) {
+            println("    ${seg.size}")
+        }
+
+
+//        for (key in segMap.keys) {
+//            val closed = mutableSetOf<Int>()
+//            val open = segMap[key]!!
+//            while (open.size > 0) {
+//                val node = open.random()
+//                closed.add(node)
+//                open.removeAt(0)
+//                for (n in direction.getDirectNeighbours(node)) {
+//                    if (closed.contains(n) || open.contains(node)) {
+//                        continue
+//                    }
+//
+//                }
+//            }
+//        }
+//
+//        for (edge in mst.subList(10, mst.size)) {
+//            when (edge.first - edge.second) {
+//                0 -> genes[edge.first] = 0 // None
+//                problem.width -> genes[edge.first] = 1 // Up
+//                -1 -> genes[edge.first] = 2 // Right
+//                -problem.width -> genes[edge.first] = 3 // Down
+//                1 -> genes[edge.first] = 4 // Left
+//                else -> println("Error with parent in Chromosome.initializeMST")
+//            }
+//        }
+
+        segmentClass.initialize()
+        overallDeviation()
+        connectivityMeasure()
+        edgeValue()
+    }
+
+    fun initializeMSTPrim() {
         val rand = Random.nextInt(0, genes.size)
-        var currentVertex = Triple(rand, rand, 0)
+        var currentVertex = Triple(rand, rand, 0.0)
 
         val mst = MutableList<Boolean>(genes.size) { false }
-        val queue = PriorityQueue<Triple<Int,Int,Int>>(kotlin.Comparator { o1, o2 -> o1.third - o2.third })
-        val key = MutableList<Int>(genes.size) { Int.MAX_VALUE }
+        // TODO: don't use toInt()
+        val queue = PriorityQueue<Triple<Int,Int,Double>>(kotlin.Comparator { o1, o2 -> (o1.third - o2.third).toInt() })
+        val key = MutableList<Double>(genes.size) { Double.MAX_VALUE }
 
         queue.add(currentVertex)
-        key[rand] = 0
+        key[rand] = 0.0
 
         while (queue.isNotEmpty()) {
             currentVertex = queue.poll()
-            if (mst[currentVertex.first]) { continue }
+            if (mst[currentVertex.first]) {
+                continue
+            }
             mst[currentVertex.first] = true
             for (n in direction.getDirectNeighbours(currentVertex.first)) {
                 val distance = problem.distance(n, currentVertex.first)
@@ -136,9 +230,7 @@ class Chromosome(val problem: Problem, val direction: Direction) {
             for (pixel in edge) {
                 for (n in direction.getDirectNeighbours(pixel)) {
                     if (map[n] != map[pixel]) {
-                        val c1 = problem.colourList[pixel]
-                        val c2 = problem.colourList[n]
-                        edgeValue += sqrt(Math.pow(c1.first - c2.first, 2.0) + Math.pow(c1.second - c2.second, 2.0) + Math.pow(c1.third - c2.third, 2.0))
+                        edgeValue += problem.distance(pixel, n)
                     }
                 }
             }
@@ -149,5 +241,9 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         // return true if this dominates other, else returns false
         return (connectivityMeasure <= other.connectivityMeasure && overallDeviation <= other.overallDeviation && edgeValue >= other.edgeValue) &&
                 (connectivityMeasure < other.connectivityMeasure || overallDeviation < other.overallDeviation || edgeValue > other.edgeValue)
+    }
+
+    fun getFitness(largestConn: Double, largestDev: Double, largestEdge: Double): Double {
+        return (1 - connectivityMeasure/largestConn) + (1 - overallDeviation/largestDev) + (edgeValue/largestEdge)
     }
 }

@@ -4,8 +4,8 @@
 
 fun main(args: Array<String>) {
     // TODO: if number segments is larger or smaller than max and min number of possible segments, set crowdingDistance to 0
-    val problem = Problem("353013/Test image.jpg", 400)
-    val nsga2 = NSGA2(problem, 10, 40, 0.2)
+    val problem = Problem("86016/Test image.jpg", 400)
+    val nsga2 = NSGA2(problem, 1, 4, 0.2)
     nsga2.run()
 
     // TODO: only write nondominated solution (both parent and child)
@@ -21,6 +21,23 @@ fun main(args: Array<String>) {
         problem.drawOnImage(parent, "parent2_${i}segments=${parent.segmentClass.partitions!!.size}.png")
         i += 1
     }
+
+//    val ga = GA(problem, 10, 10, 0.2)
+//    ga.run()
+//    var i = 0
+//    for (pop in ga.population) {
+//        problem.drawOnBlank(pop, "parent_${i}segments=${pop.segmentClass.partitions!!.size}.png")
+//        problem.drawOnImage(pop, "parent2_${i}segments=${pop.segmentClass.partitions!!.size}.png")
+//        i += 1
+//    }
+
+
+//    val dir = Direction(problem.width, problem.height)
+//    val chrome = Chromosome(problem, dir)
+//    chrome.initializeMSTKruskal()
+//    problem.drawOnImage(chrome, "test.png")
+//    println(chrome.segmentClass.partitions!!.size)
+
 //    problem.drawOnBlank(nsga2.childPopulation[2], "test1.png")
 //    problem.drawOnImage(nsga2.childPopulation[2], "test2.png")
 

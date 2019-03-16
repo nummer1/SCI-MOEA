@@ -11,11 +11,11 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
     private fun initializePopulation() {
         val executor = Executors.newFixedThreadPool(8)
         for (i in 0.until(populationSize)) {
-            val worker = Runnable { parentPopulation[i].initializeMST() }
+            val worker = Runnable { parentPopulation[i].initializeMSTPrim() }
             executor.execute(worker)
         }
         for (j in 0.until(populationSize)) {
-            val worker = Runnable { childPopulation[j].initializeMST() }
+            val worker = Runnable { childPopulation[j].initializeMSTPrim() }
             executor.execute(worker)
         }
         executor.shutdown()
@@ -156,7 +156,6 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
             println("AVERAGE PARENT: ${sum[4]/parentPopulation.size}, ${sum[5]/parentPopulation.size}, ${sum[6]/parentPopulation.size}, ${sum[7]/parentPopulation.size}")
             println("BEST PARENT: ${parentPopulation.minBy { it.overallDeviation }!!.overallDeviation}, ${parentPopulation.minBy { it.connectivityMeasure }!!.connectivityMeasure}, ${parentPopulation.maxBy { it.edgeValue }!!.edgeValue}")
             println()
-            // childPopulation.forEach { println("${it.overallDeviation}, ${it.connectivityMeasure}, ${it.getSegments().size}") }
         }
     }
 }

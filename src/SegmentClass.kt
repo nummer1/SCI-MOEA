@@ -21,11 +21,11 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
         makeSegments()
         makeSegmentMap()
         makeSegmentEdges()
-        // merge segments smaller then 100 pixels
-        mergeSmallSegments()
-        // remake map and edges to correspond with new segments
-        makeSegmentMap()
-        makeSegmentEdges()
+//        // merge segments smaller then 100 pixels
+//        mergeSmallSegments()
+//        // remake map and edges to correspond with new segments
+//        makeSegmentMap()
+//        makeSegmentEdges()
     }
 
     private fun mergeSmallSegments() {
@@ -125,7 +125,6 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
 //        var sum = 0
 //        partitions!!.forEach { sum += it.size }
 //        println("sum: $sum, ${partitions!!.size}")
-
     }
 
     private fun makeSegments() {
