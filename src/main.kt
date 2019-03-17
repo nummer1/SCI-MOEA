@@ -4,7 +4,7 @@
 
 fun main(args: Array<String>) {
     val minSegmentSize = 300
-    val genCount = 2
+    val genCount = 30
     val popSize = 20
     val mutationRate = 0.3
     val crossoverRate = 1.0
