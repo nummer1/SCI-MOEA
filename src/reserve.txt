@@ -1,0 +1,33 @@
+//        val merged = MutableList<Boolean>(partitions!!.size) { it in remainingIndexes }
+//        var queueList = mutableListOf<Triple<Int, Int, Double>>()
+//
+//        for (i in remainingIndexes) {
+//            for (n in partitionsNeighbours!![i]!!) {
+//                if (!merged[n]) {
+//                    queueList.add(Triple(n, i, getDistance(avgColour, i, n)))
+//                }
+//            }
+//        }
+//
+//        while (queueList.isNotEmpty()) {
+//            queueList.sortBy { it.third }
+//            val next = queueList[0]
+//            if (merged[next.first]) { println("MERGED ADDED TO QUEUE") }
+//            merged[next.first] = true
+//
+//            partitions!![next.second].addAll(partitions!![next.first])
+//            partitions!![next.first] = mutableListOf<Int>()
+//            partitionsNeighbours!![next.first]!!.forEach { partitionsNeighbours!![next.second]!!.add(it) }
+//            remainingIndexes.forEach { partitionsNeighbours!![it]!!.remove(it); partitionsNeighbours!![it]!!.remove(next.first) }
+//            // partitionsNeighbours!![next.second]!!.addAll(partitionsNeighbours!![next.first]!!)
+//            setColour(next.second, avgColour, partitions!![next.second])
+//
+//            queueList = mutableListOf()
+//            for (i in remainingIndexes) {
+//                for (n in partitionsNeighbours!![i]!!) {
+//                    if (!merged[n]) {
+//                        queueList.add(Triple(n, i, getDistance(avgColour, i, n)))
+//                    }
+//                }
+//            }
+//        }

@@ -28,11 +28,14 @@ class Element() {
 
         if (r1.rank > r2.rank) {
             r2.parent = r1
+            r1.size += r2.size
         } else if (r1.rank < r2.rank) {
             r1.parent = r2
+            r2.size += r1.size
         } else {
             r1.parent = r2
             r2.rank = r2.rank + 1
+            r2.size += r1.size
         }
     }
 }

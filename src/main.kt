@@ -1,28 +1,31 @@
+import kotlin.math.roundToInt
+
 // http://shiralab.ynu.ac.jp/data/paper/cec09_shirakawa.pdf
 // http://www.academia.edu/6394976/Multi-Objective_Evolutionary_Clustering_using_Variable-Length_Real_Jumping_Genes_Genetic_Algorithm
 // https://github.com/simjohan/bio-ai-project2/blob/master/pdf/978-3-319-71928-3_17.pdf
 
 fun main(args: Array<String>) {
-    // TODO: if number segments is larger or smaller than max and min number of possible segments, set crowdingDistance to 0
-    val problem = Problem("86016/Test image.jpg", 400)
-    val nsga2 = NSGA2(problem, 1, 4, 0.2)
+    val minSegmentSize = 300
+    val genCount = 30
+    val popSize = 20
+    val mutationRate = 0.2
+    val crossoverRate = 1.0
+    val minSegmentCount = 2
+    val maxSegmentCount = 10
+
+    val problem = Problem("178054/Test image.jpg", minSegmentSize)
+    val nsga2 = NSGA2(problem, genCount, popSize, mutationRate, minSegmentCount, maxSegmentCount)
     nsga2.run()
 
-    // TODO: only write nondominated solution (both parent and child)
     var i = 0
-    for (child in nsga2.childPopulation) {
-        problem.drawOnBlank(child, "child_${i}segments=${child.segmentClass.partitions!!.size}.png")
-        problem.drawOnImage(child, "child2_${i}segments=${child.segmentClass.partitions!!.size}.png")
-        i += 1
-    }
-    i = 0
-    for (parent in nsga2.getNondominatedParents()) {
-        problem.drawOnBlank(parent, "parent_${i}segments=${parent.segmentClass.partitions!!.size}.png")
-        problem.drawOnImage(parent, "parent2_${i}segments=${parent.segmentClass.partitions!!.size}.png")
+    for (pop in nsga2.getNondominatedPopulation()) {
+        val name = "pop_${i}segments=${pop.segmentClass.partitions!!.size}_OA=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
+        problem.drawOnBlank(pop, "GT$name")
+        problem.drawOnImage(pop, name)
         i += 1
     }
 
-//    val ga = GA(problem, 10, 10, 0.2)
+//    val ga = GA(problem, genCount, popSize, mutationRate, maxSegmentCount, minSegmentCount)
 //    ga.run()
 //    var i = 0
 //    for (pop in ga.population) {

@@ -21,12 +21,52 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
         makeSegments()
         makeSegmentMap()
         makeSegmentEdges()
-//        // merge segments smaller then 100 pixels
-//        mergeSmallSegments()
-//        // remake map and edges to correspond with new segments
-//        makeSegmentMap()
-//        makeSegmentEdges()
+        // merge segments smaller then 100 pixels
+        mergeSmallSegments()
+        // remake map and edges to correspond with new segments
+        makeSegmentMap()
+        makeSegmentEdges()
     }
+
+//    private fun mergeSegments() {
+//        // merges segments until all segments are larger than x
+//
+//        fun setColour(segmentNumber: Int, colourList: MutableList<Triple<Double, Double, Double>>, pixelList: MutableList<Int>) {
+//            val sum = mutableListOf(0.0, 0.0, 0.0)
+//            for (pixel in pixelList) {
+//                val colour = chrome.problem.colourList[pixel]
+//                sum[0] += colour.first
+//                sum[1] += colour.second
+//                sum[2] += colour.third
+//            }
+//            val lSize = pixelList.size.toDouble()
+//            colourList[segmentNumber] = (Triple(sum[0]/lSize, sum[1]/lSize, sum[2]/lSize))
+//        }
+//
+//        fun getDistance(colourList: MutableList<Triple<Double, Double, Double>>, i: Int, n: Int): Double {
+//            return sqrt(Math.pow(colourList[i].first - colourList[n].first, 2.0) + Math.pow(colourList[i].second - colourList[n].second, 2.0) + Math.pow(colourList[i].third - colourList[n].third, 2.0))
+//        }
+//
+//        // TODO: convert to set?
+//        val remainingIndexes = mutableListOf<Int>()
+//        val avgColour = mutableListOf<Triple<Double, Double, Double>>()
+//
+//        for (pIndex in partitions!!.indices) {
+//            if (partitions!![pIndex].size > chrome.problem.minSegmentSize) {
+//                remainingIndexes.add(pIndex)
+//            }
+//        }
+//
+//        for (sIndex in partitions!!.indices) {
+//            avgColour.add(Triple(0.0, 0.0, 0.0))
+//            setColour(sIndex, avgColour, partitions!![sIndex])
+//        }
+//
+//        while (remainingIndexes.isNotEmpty()) {
+//            val nextMerge = remainingIndexes[0]
+//
+//        }
+//    }
 
     private fun mergeSmallSegments() {
         // merges segments under 100 pixels
@@ -47,7 +87,10 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
             return sqrt(Math.pow(colourList[i].first - colourList[n].first, 2.0) + Math.pow(colourList[i].second - colourList[n].second, 2.0) + Math.pow(colourList[i].third - colourList[n].third, 2.0))
         }
 
-        // TODO: convert to set?
+        val changed = mutableMapOf<Int, Boolean>()
+        for (i in partitions!!.indices) {
+            changed[i] = false
+        }
         val remainingIndexes = mutableListOf<Int>()
         val avgColour = mutableListOf<Triple<Double, Double, Double>>()
 
@@ -63,8 +106,7 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
         }
 
         val merged = MutableList<Boolean>(partitions!!.size) { it in remainingIndexes }
-        // TODO: make queue-comparator accurate (do no use toInt())
-        val queue = PriorityQueue<Triple<Int,Int,Double>>(Comparator { o1, o2 -> (o1.third - o2.third).toInt() })
+        val queue = PriorityQueue<Triple<Int,Int,Double>>(Comparator { o1, o2 -> (1000*(o1.third - o2.third)).toInt() })
         for (i in remainingIndexes) {
             for (n in partitionsNeighbours!![i]!!) {
                 if (!merged[n]) {
@@ -82,50 +124,46 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
                     queue.add(Triple(n, next.second, getDistance(avgColour, next.second, n)))
                 }
             }
+            changed[next.second] = true
+            changed[next.first] = true
             partitions!![next.second].addAll(partitions!![next.first])
             partitions!![next.first] = mutableListOf<Int>()
         }
 
-//        val merged = MutableList<Boolean>(partitions!!.size) { it in remainingIndexes }
-//        var queueList = mutableListOf<Triple<Int, Int, Double>>()
-//
-//        for (i in remainingIndexes) {
-//            for (n in partitionsNeighbours!![i]!!) {
-//                if (!merged[n]) {
-//                    queueList.add(Triple(n, i, getDistance(avgColour, i, n)))
-//                }
-//            }
-//        }
-//
-//        while (queueList.isNotEmpty()) {
-//            queueList.sortBy { it.third }
-//            val next = queueList[0]
-//            if (merged[next.first]) { println("MERGED ADDED TO QUEUE") }
-//            merged[next.first] = true
-//
-//            partitions!![next.second].addAll(partitions!![next.first])
-//            partitions!![next.first] = mutableListOf<Int>()
-//            partitionsNeighbours!![next.first]!!.forEach { partitionsNeighbours!![next.second]!!.add(it) }
-//            remainingIndexes.forEach { partitionsNeighbours!![it]!!.remove(it); partitionsNeighbours!![it]!!.remove(next.first) }
-//            // partitionsNeighbours!![next.second]!!.addAll(partitionsNeighbours!![next.first]!!)
-//            setColour(next.second, avgColour, partitions!![next.second])
-//
-//            queueList = mutableListOf()
-//            for (i in remainingIndexes) {
-//                for (n in partitionsNeighbours!![i]!!) {
-//                    if (!merged[n]) {
-//                        queueList.add(Triple(n, i, getDistance(avgColour, i, n)))
-//                    }
-//                }
-//            }
-//        }
-
         partitions = partitions!!.filter { it.isNotEmpty() }.toMutableList()
+//        for (i in partitions!!.indices) {
+//            if (changed[i]!!) {
+//                remakeSegment(i)
+//            }
+//        }
 
 //        var sum = 0
 //        partitions!!.forEach { sum += it.size }
 //        println("sum: $sum, ${partitions!!.size}")
     }
+
+//    fun remakeSegment(segInt: Int) {
+//        val segSet = mutableSetOf<Int>()
+//        segSet.addAll(partitions!![segInt])
+//        val openList = mutableListOf<Int>()
+//        val closedSet = mutableSetOf<Int>()
+//        var root = segSet.random()
+//        openList.add(root)
+//        while (openList.isNotEmpty()) {
+//            root = openList[0]
+//            openList.removeAt(0)
+//            for (child in direction.getDirectNeighbours(root)) {
+//                if (child !in segSet || child in closedSet) {
+//                    continue
+//                }
+//                if (child !in openList) {
+//                    openList.add(child)
+//                    chrome.genes[child] = direction.getDirection(child, root)
+//                }
+//            }
+//            closedSet.add(root)
+//        }
+//    }
 
     private fun makeSegments() {
         // returns list of list of indexes, where each sublist is a segment
@@ -187,12 +225,7 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
                 for (n in neighbours) {
                     if (pixelToPartitionMap!![n] != sIndex) {
                         segmentsEdges[sIndex].add(pixel)
-                        if (segmentsNeighbours.containsKey(sIndex)) {
-                            segmentsNeighbours[sIndex]!!.add(pixelToPartitionMap!![n]!!)
-                        }
-//                        } else {
-//                            segmentsNeighbours[sIndex] = mutableSetOf(pixelToPartitionMap!![n]!!)
-//                        }
+                        segmentsNeighbours[sIndex]!!.add(pixelToPartitionMap!![n]!!)
                     }
                 }
             }

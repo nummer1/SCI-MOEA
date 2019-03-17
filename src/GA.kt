@@ -2,7 +2,7 @@ import java.util.concurrent.Executors
 import kotlin.random.Random
 
 
-class GA(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double) {
+class GA(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double, private val maxSegmentCount: Int, private val minSegmentCount: Int) {
     private val direction = Direction(problem.width, problem.height)
     var population = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
 
@@ -31,13 +31,13 @@ class GA(private val problem: Problem, private val generationCount: Int, private
                     potParents.add(allParents[randParentIndex])
                     allParents.removeAt(randParentIndex)
                 }
-                val parent1 = if (population[potParents[0]].getFitness(largestConn, largestDev, largestEdge) > population[potParents[1]].getFitness(largestConn, largestDev, largestEdge))
+                val parent1 = if (population[potParents[0]].getFitness(largestConn, largestDev, largestEdge, maxSegmentCount, minSegmentCount) > population[potParents[1]].getFitness(largestConn, largestDev, largestEdge, maxSegmentCount, minSegmentCount))
                     population[potParents[0]] else population[potParents[1]]
-                val parent2 = if (population[potParents[2]].getFitness(largestConn, largestDev, largestEdge) > population[potParents[3]].getFitness(largestConn, largestDev, largestEdge))
+                val parent2 = if (population[potParents[2]].getFitness(largestConn, largestDev, largestEdge, maxSegmentCount, minSegmentCount) > population[potParents[3]].getFitness(largestConn, largestDev, largestEdge, maxSegmentCount, minSegmentCount))
                     population[potParents[2]] else population[potParents[3]]
                 val child = Chromosome(problem, direction)
                 child.uniformCrossover(parent1, parent2)
-                if (Random.nextDouble(0.0, 1.0) < mutationRate) child.randomBitFlipMutation()
+                if (Random.nextDouble(0.0, 1.0) < mutationRate) child.flipRandomSegmentsMutation()
                 newPopulation.add(child)
             }
             executor.execute(worker)

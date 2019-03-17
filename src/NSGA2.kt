@@ -2,7 +2,7 @@ import java.util.concurrent.Executors
 import kotlin.random.Random
 
 
-class NSGA2(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double) {
+class NSGA2(private val problem: Problem, private val generationCount: Int, private val populationSize: Int, private val mutationRate: Double, private val minSegmentCount: Int, private val maxSegmentCount: Int) {
 
     private val direction = Direction(problem.width, problem.height)
     var parentPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
@@ -67,28 +67,37 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         population.forEach { it.crowdingDistance = 0.0 }
 
         population.sortBy { it.overallDeviation }
-        population.first().crowdingDistance = 3.0
-        population.last().crowdingDistance = 3.0
+        population.first().crowdingDistance += 3.0
+        population.last().crowdingDistance += 3.0
         val largestDev = population.last().overallDeviation
         for (i in 1.until(population.size-1)) {
             population[i].crowdingDistance += population[i+1].overallDeviation/largestDev - population[i-1].overallDeviation/largestDev
         }
 
         population.sortBy { it.connectivityMeasure }
-        population.first().crowdingDistance = 3.0
-        population.last().crowdingDistance = 3.0
+        population.first().crowdingDistance += 3.0
+        population.last().crowdingDistance += 3.0
         val largestConn = population.last().connectivityMeasure
         for (i in 1.until(population.size-1)) {
             population[i].crowdingDistance += population[i+1].connectivityMeasure/largestConn - population[i-1].connectivityMeasure/largestConn
         }
 
         population.sortBy { it.edgeValue }
-        population.first().crowdingDistance = 3.0
-        population.last().crowdingDistance = 3.0
+        population.first().crowdingDistance += 3.0
+        population.last().crowdingDistance += 3.0
         val largestEdge = population.last().edgeValue
         for (i in 1.until(population.size-1)) {
             population[i].crowdingDistance += population[i+1].edgeValue/largestEdge - population[i-1].edgeValue/largestEdge
         }
+
+        for (pop in population) {
+            if (pop.getNumberSegments() > maxSegmentCount) {
+                pop.crowdingDistance -= 3 * (pop.getNumberSegments() / maxSegmentCount)
+            } else if (pop.getNumberSegments() < minSegmentCount) {
+                pop.crowdingDistance -= 3 * (minSegmentCount / pop.getNumberSegments())
+            }
+        }
+
         population.sortByDescending { it.crowdingDistance }
     }
 
@@ -100,13 +109,13 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         parentPopulation.clear()
         while (true) {
             val nonDominated = fastNondominatedSort(population)
+            crowdingDistanceAssignment(nonDominated)
             if (parentPopulation.size + nonDominated.size <= populationSize) {
                 parentPopulation.addAll(nonDominated)
                 if (parentPopulation.size == populationSize) {
                     break
                 }
             } else {
-                crowdingDistanceAssignment(nonDominated)
                 for (i in 0.until(populationSize - parentPopulation.size)) {
                     parentPopulation.add(nonDominated[i])
                 }
@@ -125,11 +134,11 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
                     potParents.add(allParents[randParentIndex])
                     allParents.removeAt(randParentIndex)
                 }
-                val parent1 = if (parentPopulation[potParents[0]].dominates(parentPopulation[potParents[1]])) parentPopulation[potParents[0]] else parentPopulation[potParents[1]]
-                val parent2 = if (parentPopulation[potParents[2]].dominates(parentPopulation[potParents[3]])) parentPopulation[potParents[2]] else parentPopulation[potParents[3]]
+                val parent1 = if (parentPopulation[potParents[0]].isLarger(parentPopulation[potParents[1]])) parentPopulation[potParents[0]] else parentPopulation[potParents[1]]
+                val parent2 = if (parentPopulation[potParents[2]].isLarger(parentPopulation[potParents[3]])) parentPopulation[potParents[2]] else parentPopulation[potParents[3]]
                 val child = Chromosome(problem, direction)
                 child.uniformCrossover(parent1, parent2)
-                if (Random.nextDouble(0.0, 1.0) < mutationRate) child.randomBitFlipMutation()
+                if (Random.nextDouble(0.0, 1.0) < mutationRate) child.flipRandomSegmentsMutation()
                 childPopulation.add(child)
             }
             executor.execute(worker)
@@ -138,8 +147,10 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         while (!executor.isTerminated) { }
     }
 
-    fun getNondominatedParents(): List<Chromosome> {
-        return fastNondominatedSort(parentPopulation, editPopulation = false)
+    fun getNondominatedPopulation(): List<Chromosome> {
+        val pop = parentPopulation.subList(0, parentPopulation.size)
+        pop.addAll(childPopulation)
+        return fastNondominatedSort(pop, editPopulation = false)
     }
 
     fun run() {
