@@ -9,7 +9,7 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
     var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
 
     private fun initializePopulation() {
-        val executor = Executors.newFixedThreadPool(8)
+        val executor = Executors.newFixedThreadPool(3)
         for (i in 0.until(populationSize)) {
             val worker = Runnable { parentPopulation[i].initializeMSTPrim() }
             executor.execute(worker)
