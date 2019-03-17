@@ -10,7 +10,7 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
     var childPopulation = MutableList<Chromosome>(populationSize) { Chromosome(problem, direction) }
 
     private fun initializePopulation() {
-        val executor = Executors.newFixedThreadPool(3)
+        val executor = Executors.newFixedThreadPool(2)
         for (i in 0.until(populationSize)) {
             val worker = Runnable { parentPopulation[i].initializeMSTPrim() }
             executor.execute(worker)
@@ -93,9 +93,9 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
 
         for (pop in population) {
             if (pop.getNumberSegments() > maxSegmentCount) {
-                pop.crowdingDistance -= 3 * (pop.getNumberSegments() / maxSegmentCount)
+                pop.crowdingDistance -= 2 * (pop.getNumberSegments() / maxSegmentCount)
             } else if (pop.getNumberSegments() < minSegmentCount) {
-                pop.crowdingDistance -= 3 * (minSegmentCount / pop.getNumberSegments())
+                pop.crowdingDistance -= 2 * (minSegmentCount / pop.getNumberSegments())
             }
         }
 
