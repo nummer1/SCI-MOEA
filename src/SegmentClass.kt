@@ -1,5 +1,6 @@
 import java.util.*
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 
 class SegmentClass(val chrome: Chromosome, val direction: Direction) {
@@ -131,39 +132,53 @@ class SegmentClass(val chrome: Chromosome, val direction: Direction) {
         }
 
         partitions = partitions!!.filter { it.isNotEmpty() }.toMutableList()
-//        for (i in partitions!!.indices) {
-//            if (changed[i]!!) {
-//                remakeSegment(i)
-//            }
-//        }
+        for (i in partitions!!.indices) {
+            if (changed[i]!!) {
+                if (Random.nextDouble(0.0, 1.0) < 0.2) {
+                    remakeSegment(i)
+                }
+            }
+        }
 
 //        var sum = 0
 //        partitions!!.forEach { sum += it.size }
 //        println("sum: $sum, ${partitions!!.size}")
     }
 
-//    fun remakeSegment(segInt: Int) {
-//        val segSet = mutableSetOf<Int>()
-//        segSet.addAll(partitions!![segInt])
-//        val openList = mutableListOf<Int>()
-//        val closedSet = mutableSetOf<Int>()
-//        var root = segSet.random()
-//        openList.add(root)
-//        while (openList.isNotEmpty()) {
-//            root = openList[0]
-//            openList.removeAt(0)
-//            for (child in direction.getDirectNeighbours(root)) {
-//                if (child !in segSet || child in closedSet) {
-//                    continue
-//                }
-//                if (child !in openList) {
-//                    openList.add(child)
-//                    chrome.genes[child] = direction.getDirection(child, root)
-//                }
-//            }
-//            closedSet.add(root)
-//        }
-//    }
+    private fun remakeSegment(segInt: Int) {
+        val pixelToIndexMap = mutableMapOf<Int, Int>()
+        val segment = partitions!![segInt]
+        for (index in partitions!![segInt].indices) {
+            pixelToIndexMap[partitions!![segInt][index]] = index
+        }
+        val rand = Random.nextInt(0, segment.size)
+        var currentVertex = Triple(rand, rand, 0.0)
+
+        val mst = MutableList<Boolean>(segment.size) { false }
+        val queue = PriorityQueue<Triple<Int,Int,Double>>(kotlin.Comparator { o1, o2 -> 1000*(o1.third - o2.third).toInt() })
+        val key = MutableList<Double>(segment.size) { Double.MAX_VALUE }
+
+        queue.add(currentVertex)
+        key[rand] = 0.0
+
+        while (queue.isNotEmpty()) {
+            currentVertex = queue.poll()
+            if (mst[currentVertex.first]) {
+                continue
+            }
+            mst[currentVertex.first] = true
+            for (n in direction.getDirectNeighbours(segment[currentVertex.first])) {
+                if (pixelToIndexMap.contains(n)) {
+                    val distance = chrome.problem.distance(n, segment[currentVertex.first])
+                    if (!mst[pixelToIndexMap[n]!!] && distance < key[pixelToIndexMap[n]!!]) {
+                        queue.add(Triple(pixelToIndexMap[n]!!, currentVertex.first, distance))
+                        key[pixelToIndexMap[n]!!] = distance
+                    }
+                }
+            }
+            chrome.genes[segment[currentVertex.first]] = direction.getDirection(segment[currentVertex.first], segment[currentVertex.second])
+        }
+    }
 
     private fun makeSegments() {
         // returns list of list of indexes, where each sublist is a segment

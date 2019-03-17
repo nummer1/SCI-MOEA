@@ -8,18 +8,18 @@ fun main(args: Array<String>) {
     val minSegmentSize = 300
     val genCount = 30
     val popSize = 20
-    val mutationRate = 0.2
+    val mutationRate = 0.3
     val crossoverRate = 1.0
-    val minSegmentCount = 2
-    val maxSegmentCount = 10
+    val minSegmentCount = 4
+    val maxSegmentCount = 16
 
-    val problem = Problem("178054/Test image.jpg", minSegmentSize)
+    val problem = Problem("353013/Test image.jpg", minSegmentSize)
+
     val nsga2 = NSGA2(problem, genCount, popSize, mutationRate, minSegmentCount, maxSegmentCount)
     nsga2.run()
-
     var i = 0
     for (pop in nsga2.getNondominatedPopulation()) {
-        val name = "pop_${i}segments=${pop.segmentClass.partitions!!.size}_OA=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
+        val name = "pop_${i}segments=${pop.segmentClass.partitions!!.size}_OD=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
         problem.drawOnBlank(pop, "GT$name")
         problem.drawOnImage(pop, name)
         i += 1
@@ -27,12 +27,10 @@ fun main(args: Array<String>) {
 
 //    val ga = GA(problem, genCount, popSize, mutationRate, maxSegmentCount, minSegmentCount)
 //    ga.run()
-//    var i = 0
-//    for (pop in ga.population) {
-//        problem.drawOnBlank(pop, "parent_${i}segments=${pop.segmentClass.partitions!!.size}.png")
-//        problem.drawOnImage(pop, "parent2_${i}segments=${pop.segmentClass.partitions!!.size}.png")
-//        i += 1
-//    }
+//    val pop = ga.getBest()
+//    val name = "pop_best_segments=${pop.segmentClass.partitions!!.size}_OD=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
+//    problem.drawOnBlank(pop, "GT$name")
+//    problem.drawOnImage(pop, name)
 
 
 //    val dir = Direction(problem.width, problem.height)

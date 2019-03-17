@@ -45,6 +45,11 @@ class GA(private val problem: Problem, private val generationCount: Int, private
         executor.shutdown()
         while (!executor.isTerminated) { }
         population = newPopulation
+        population.sortByDescending { it.getFitness(largestConn, largestDev, largestEdge, maxSegmentCount, minSegmentCount) }
+    }
+
+    fun getBest(): Chromosome {
+        return population[0]
     }
 
     fun run() {

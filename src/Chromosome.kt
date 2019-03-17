@@ -124,8 +124,7 @@ class Chromosome(val problem: Problem, val direction: Direction) {
         var currentVertex = Triple(rand, rand, 0.0)
 
         val mst = MutableList<Boolean>(genes.size) { false }
-        // TODO: don't use toInt()
-        val queue = PriorityQueue<Triple<Int,Int,Double>>(kotlin.Comparator { o1, o2 -> (o1.third - o2.third).toInt() })
+        val queue = PriorityQueue<Triple<Int,Int,Double>>(kotlin.Comparator { o1, o2 -> 1000*(o1.third - o2.third).toInt() })
         val key = MutableList<Double>(genes.size) { Double.MAX_VALUE }
 
         queue.add(currentVertex)
@@ -272,7 +271,7 @@ class Chromosome(val problem: Problem, val direction: Direction) {
 
     fun getFitness(largestConn: Double, largestDev: Double, largestEdge: Double, maxSegmentCount: Int, minSegmentCount: Int): Double {
         var fitness = 0.0
-        fitness += (1 - connectivityMeasure/largestConn) + (1 - overallDeviation/largestDev) + (edgeValue/largestEdge)
+        fitness += 1 * (1 - connectivityMeasure/largestConn) + 3 * (1 - overallDeviation/largestDev) + 2 * (edgeValue/largestEdge)
         if (getNumberSegments() > maxSegmentCount) {
             fitness -= 1 * (getNumberSegments() / maxSegmentCount)
         } else if (getNumberSegments() < minSegmentCount) {
