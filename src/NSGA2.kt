@@ -1,4 +1,5 @@
 import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 
@@ -151,6 +152,16 @@ class NSGA2(private val problem: Problem, private val generationCount: Int, priv
         val pop = parentPopulation.subList(0, parentPopulation.size)
         pop.addAll(childPopulation)
         return fastNondominatedSort(pop, editPopulation = false)
+    }
+
+    fun shutdown() {
+        var i = 0
+        for (pop in getNondominatedPopulation()) {
+            val name = "pop_${i}segments=${pop.segmentClass.partitions!!.size}_OD=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
+            problem.drawOnBlank(pop, "GT$name")
+            problem.drawOnImage(pop, name)
+            i += 1
+        }
     }
 
     fun run() {

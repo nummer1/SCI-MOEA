@@ -1,5 +1,3 @@
-import kotlin.math.roundToInt
-
 // http://shiralab.ynu.ac.jp/data/paper/cec09_shirakawa.pdf
 // http://www.academia.edu/6394976/Multi-Objective_Evolutionary_Clustering_using_Variable-Length_Real_Jumping_Genes_Genetic_Algorithm
 // https://github.com/simjohan/bio-ai-project2/blob/master/pdf/978-3-319-71928-3_17.pdf
@@ -8,31 +6,23 @@ fun main(args: Array<String>) {
     val minSegmentSize = 300
     val genCount = 30
     val popSize = 20
-    val mutationRate = 0.2
+    val mutationRate = 0.3
     val crossoverRate = 1.0
-    val minSegmentCount = 2
-    val maxSegmentCount = 10
+    val minSegmentCount = 3
+    val maxSegmentCount = 40
 
-    val problem = Problem("178054/Test image.jpg", minSegmentSize)
+    val problem = Problem("216066/Test image.jpg", minSegmentSize)
     val nsga2 = NSGA2(problem, genCount, popSize, mutationRate, minSegmentCount, maxSegmentCount)
     nsga2.run()
-
-    var i = 0
-    for (pop in nsga2.getNondominatedPopulation()) {
-        val name = "pop_${i}segments=${pop.segmentClass.partitions!!.size}_OA=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
-        problem.drawOnBlank(pop, "GT$name")
-        problem.drawOnImage(pop, name)
-        i += 1
-    }
+    nsga2.shutdown()
 
 //    val ga = GA(problem, genCount, popSize, mutationRate, maxSegmentCount, minSegmentCount)
 //    ga.run()
-//    var i = 0
-//    for (pop in ga.population) {
-//        problem.drawOnBlank(pop, "parent_${i}segments=${pop.segmentClass.partitions!!.size}.png")
-//        problem.drawOnImage(pop, "parent2_${i}segments=${pop.segmentClass.partitions!!.size}.png")
-//        i += 1
-//    }
+//    val pop = ga.getBest()
+//    val name = "pop_best_segments=${pop.segmentClass.partitions!!.size}_OD=${pop.overallDeviation.roundToInt()}_CM=${pop.connectivityMeasure.roundToInt()}_EV=${pop.edgeValue.roundToInt()}.png"
+//    problem.drawOnBlank(pop, "GT$name")
+//    problem.drawOnImage(pop, name)
+
 
 
 //    val dir = Direction(problem.width, problem.height)
